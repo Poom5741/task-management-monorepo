@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	projectHandler "github.com/poom5741/task-management-monorepo/backend/internal/handler/project"
 )
@@ -11,6 +13,8 @@ type Handlers struct {
 
 func SetupRouter(projectH *projectHandler.ProjectHandler) *gin.Engine {
 	r := gin.Default()
+
+	r.Use(corsMiddleware())
 
 	v1 := r.Group("/api/v1")
 	{
@@ -110,4 +114,20 @@ func deleteLabel(c *gin.Context) {
 
 func getDashboard(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "get dashboard"})
+}
+
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3001")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
+
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	}
 }
