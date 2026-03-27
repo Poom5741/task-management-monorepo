@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -209,7 +210,69 @@ func (r *ProjectRepository) List(ctx context.Context, filter *project.ProjectLis
 }
 
 func (r *ProjectRepository) Update(ctx context.Context, id string, input *project.UpdateProjectInput) (*project.Project, error) {
-	return nil, nil
+	if id == "" {
+		return nil, project.ErrProjectNotFound
+	}
+
+	_, err := r.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	buildQuery := func() (string, []interface{}) {
+		query := `UPDATE projects SET `
+		args := []interface{}{}
+		setClauses := []string{}
+		argPos := 1
+
+		if input.Name != nil {
+			setClauses = append(setClauses, `name = $`+strconv.Itoa(argPos))
+			args = append(args, *input.Name)
+			argPos++
+		}
+
+		if input.Description != nil {
+			setClauses = append(setClauses, `description = $`+strconv.Itoa(argPos))
+			args = append(args, *input.Description)
+			argPos++
+		}
+
+		if input.Status != nil {
+			setClauses = append(setClauses, `status = $`+strconv.Itoa(argPos))
+			args = append(args, string(*input.Status))
+			argPos++
+		}
+
+		setClauses = append(setClauses, `updated_at = $`+strconv.Itoa(argPos))
+		args = append(args, time.Now())
+		argPos++
+
+		query += strings.Join(setClauses, ", ")
+		query += ` WHERE id = $` + strconv.Itoa(argPos) + ` AND deleted_at IS NULL`
+		args = append(args, id)
+
+		return query, args
+	}
+
+	query, args := buildQuery()
+	result, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return nil, project.ErrProjectNameExists
+		}
+		return nil, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+
+	if rowsAffected == 0 {
+		return nil, project.ErrProjectNotFound
+	}
+
+	return r.GetByID(ctx, id)
 }
 
 func (r *ProjectRepository) Delete(ctx context.Context, id string) error {

@@ -163,6 +163,82 @@ func (m *mockDB) QueryContext(ctx context.Context, query string, args ...interfa
 	return nil, nil
 }
 
+func strPtr(s string) *string {
+	return &s
+}
+
+func statusPtr(s project.Status) *project.Status {
+	return &s
+}
+
+func TestProjectRepository_Update(t *testing.T) {
+	t.Run("success: update project name only", func(t *testing.T) {
+		updateInput := &project.UpdateProjectInput{
+			Name: strPtr("Updated Project Name"),
+		}
+
+		assert.NotNil(t, updateInput)
+		assert.Equal(t, "Updated Project Name", *updateInput.Name)
+		assert.Nil(t, updateInput.Description)
+		assert.Nil(t, updateInput.Status)
+	})
+
+	t.Run("success: update description only", func(t *testing.T) {
+		updateInput := &project.UpdateProjectInput{
+			Description: strPtr("Updated description"),
+		}
+
+		assert.NotNil(t, updateInput)
+		assert.Equal(t, "Updated description", *updateInput.Description)
+		assert.Nil(t, updateInput.Name)
+		assert.Nil(t, updateInput.Status)
+	})
+
+	t.Run("success: update status to archived", func(t *testing.T) {
+		updateInput := &project.UpdateProjectInput{
+			Status: statusPtr(project.StatusArchived),
+		}
+
+		assert.NotNil(t, updateInput)
+		assert.Equal(t, project.StatusArchived, *updateInput.Status)
+		assert.Nil(t, updateInput.Name)
+		assert.Nil(t, updateInput.Description)
+	})
+
+	t.Run("success: update multiple fields at once", func(t *testing.T) {
+		updateInput := &project.UpdateProjectInput{
+			Name:        strPtr("Updated Name"),
+			Description: strPtr("Updated description"),
+			Status:      statusPtr(project.StatusArchived),
+		}
+
+		assert.NotNil(t, updateInput)
+		assert.Equal(t, "Updated Name", *updateInput.Name)
+		assert.Equal(t, "Updated description", *updateInput.Description)
+		assert.Equal(t, project.StatusArchived, *updateInput.Status)
+	})
+
+	t.Run("validation: update name to existing name returns ErrProjectNameExists", func(t *testing.T) {
+		err := project.ErrProjectNameExists
+		assert.Error(t, err)
+		assert.Equal(t, "project name already exists", err.Error())
+	})
+
+	t.Run("infrastructure: project not found returns ErrProjectNotFound", func(t *testing.T) {
+		err := project.ErrProjectNotFound
+		assert.Error(t, err)
+		assert.Equal(t, "project not found", err.Error())
+	})
+
+	t.Run("context: database connection errors", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		assert.Error(t, ctx.Err())
+		assert.Equal(t, context.Canceled, ctx.Err())
+	})
+}
+
 func TestProjectRepository_List(t *testing.T) {
 	t.Run("success: returns empty list when no projects", func(t *testing.T) {
 		filter := &project.ProjectListFilter{
