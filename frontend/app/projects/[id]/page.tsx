@@ -8,20 +8,31 @@ import { Badge } from '../../../components/ui/Badge'
 import { Skeleton } from '../../../components/ui/Skeleton'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { EditProjectModal } from '../../../components/projects/EditProjectModal'
-import { useProject } from '../../../lib/api/projects'
+import { DeleteProjectModal } from '../../../components/projects/DeleteProjectModal'
+import { useProject, useDeleteProject } from '../../../lib/api/projects'
 
 function ProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
   const projectId = params.id as string
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false)
 
   const { data: project, isLoading, error, refetch } = useProject(projectId)
+  const deleteProject = useDeleteProject()
 
   React.useEffect(() => {
     if (!isLoading && !error && project) {
     }
   }, [isLoading, error, project])
+
+  React.useEffect(() => {
+    if (!deleteProject.isPending && !deleteProject.error) {
+      if (deleteProject.isSuccess) {
+        router.push('/projects')
+      }
+    }
+  }, [deleteProject.isPending, deleteProject.error, deleteProject.isSuccess, router])
 
   if (isLoading) {
     return (
@@ -111,6 +122,17 @@ function ProjectDetailPage() {
               >
                 Edit
               </Button>
+              <Button
+                variant="danger"
+                onClick={() => setIsDeleteModalOpen(true)}
+                leftIcon={
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                }
+              >
+                Delete
+              </Button>
               <Badge 
                 variant={project.status === 'active' ? 'success' : 'neutral'}
                 size="md"
@@ -124,6 +146,16 @@ function ProjectDetailPage() {
             isOpen={isEditModalOpen}
             onClose={() => setIsEditModalOpen(false)}
             project={project}
+          />
+
+          <DeleteProjectModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            projectId={project.id}
+            projectName={project.name}
+            onSuccess={() => {
+              router.push('/projects')
+            }}
           />
 
           {project.description && (
