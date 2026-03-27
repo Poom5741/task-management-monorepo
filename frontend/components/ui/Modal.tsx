@@ -5,11 +5,21 @@ interface ModalProps {
   isOpen: boolean
   onClose: () => void
   title: string
+  description?: string
   children: React.ReactNode
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
+  showCloseButton?: boolean
 }
 
-function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+function Modal({ 
+  isOpen, 
+  onClose, 
+  title, 
+  description,
+  children, 
+  size = 'md',
+  showCloseButton = true
+}: ModalProps) {
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -34,43 +44,54 @@ function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
     sm: 'max-w-sm',
     md: 'max-w-md',
     lg: 'max-w-lg',
+    xl: 'max-w-2xl',
   }
 
-  return React.createElement(
-    'div',
-    { className: 'fixed inset-0 z-50 flex items-center justify-center' },
-    React.createElement('div', {
-      className: 'fixed inset-0 bg-black bg-opacity-50',
-      onClick: onClose,
-      'aria-hidden': 'true',
-    }),
-    React.createElement(
-      'div',
-      {
-        className: cn(
-          'relative bg-white rounded-lg shadow-xl w-full mx-4',
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <div 
+        className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div 
+        className={cn(
+          'relative bg-white rounded-2xl shadow-xl w-full mx-4 animate-slide-up',
           sizes[size]
-        ),
-        role: 'dialog',
-        'aria-modal': 'true',
-        'aria-labelledby': 'modal-title',
-      },
-      React.createElement(
-        'div',
-        { className: 'flex items-center justify-between p-4 border-b' },
-        React.createElement(
-          'h2',
-          { id: 'modal-title', className: 'text-lg font-semibold text-gray-900' },
-          title
-        ),
-        React.createElement('button', {
-          onClick: onClose,
-          className: 'text-gray-400 hover:text-gray-600 transition-colors',
-          'aria-label': 'Close modal',
-        }, '✕')
-      ),
-      React.createElement('div', { className: 'p-4' }, children)
-    )
+        )}
+      >
+        <div className="flex items-start justify-between p-6 border-b border-gray-100">
+          <div>
+            <h2 
+              id="modal-title" 
+              className="text-lg font-semibold text-gray-900"
+            >
+              {title}
+            </h2>
+            {description && (
+              <p className="mt-1 text-sm text-gray-500">{description}</p>
+            )}
+          </div>
+          {showCloseButton && (
+            <button
+              onClick={onClose}
+              className="ml-4 text-gray-400 hover:text-gray-600 transition-colors rounded-lg p-1 hover:bg-gray-100"
+              aria-label="Close modal"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
   )
 }
 
