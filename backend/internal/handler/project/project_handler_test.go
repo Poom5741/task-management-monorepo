@@ -435,3 +435,292 @@ func TestProjectHandler_ListProjects(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 	})
 }
+
+func TestProjectHandler_UpdateProject(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("success: PATCH /api/v1/projects/:id returns 200 with updated project", func(t *testing.T) {
+		projectID := uuid.New().String()
+		updatedName := "Updated Name"
+
+		mockUC := &mockUsecase{
+			updateProjectFunc: func(ctx context.Context, id string, input *project.UpdateProjectInput) (*project.Project, error) {
+				assert.Equal(t, projectID, id)
+				return &project.Project{
+					ID:          projectID,
+					Name:        updatedName,
+					Description: "Original description",
+					Status:      project.StatusActive,
+					UpdatedAt:   time.Now(),
+				}, nil
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.PATCH("/projects/:id", handler.UpdateProject)
+
+		body := map[string]string{
+			"name": updatedName,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		req := httptest.NewRequest(http.MethodPatch, "/projects/"+projectID, bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("success: update name only", func(t *testing.T) {
+		projectID := uuid.New().String()
+		updatedName := "Updated Name"
+
+		mockUC := &mockUsecase{
+			updateProjectFunc: func(ctx context.Context, id string, input *project.UpdateProjectInput) (*project.Project, error) {
+				assert.Equal(t, updatedName, *input.Name)
+				assert.Nil(t, input.Description)
+				assert.Nil(t, input.Status)
+
+				return &project.Project{
+					ID:   projectID,
+					Name: updatedName,
+				}, nil
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.PATCH("/projects/:id", handler.UpdateProject)
+
+		body := map[string]string{
+			"name": updatedName,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		req := httptest.NewRequest(http.MethodPatch, "/projects/"+projectID, bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("success: update status to archived", func(t *testing.T) {
+		projectID := uuid.New().String()
+
+		mockUC := &mockUsecase{
+			updateProjectFunc: func(ctx context.Context, id string, input *project.UpdateProjectInput) (*project.Project, error) {
+				assert.Equal(t, project.StatusArchived, *input.Status)
+
+				return &project.Project{
+					ID:     projectID,
+					Status: project.StatusArchived,
+				}, nil
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.PATCH("/projects/:id", handler.UpdateProject)
+
+		body := map[string]string{
+			"status": "archived",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		req := httptest.NewRequest(http.MethodPatch, "/projects/"+projectID, bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("validation: missing ID returns 400", func(t *testing.T) {
+		mockUC := &mockUsecase{}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.PATCH("/projects/", handler.UpdateProject)
+
+		body := map[string]string{
+			"name": "Updated Name",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		req := httptest.NewRequest(http.MethodPatch, "/projects/", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("validation: invalid JSON returns 400", func(t *testing.T) {
+		projectID := uuid.New().String()
+		mockUC := &mockUsecase{}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.PATCH("/projects/:id", handler.UpdateProject)
+
+		req := httptest.NewRequest(http.MethodPatch, "/projects/"+projectID, bytes.NewBuffer([]byte("invalid json")))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("validation: name > 100 chars returns 400", func(t *testing.T) {
+		projectID := uuid.New().String()
+		longName := ""
+		for i := 0; i < 101; i++ {
+			longName += "a"
+		}
+
+		mockUC := &mockUsecase{
+			updateProjectFunc: func(ctx context.Context, id string, input *project.UpdateProjectInput) (*project.Project, error) {
+				return nil, &project.ValidationError{
+					Field:   "name",
+					Message: "name must be at most 100 characters",
+				}
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.PATCH("/projects/:id", handler.UpdateProject)
+
+		body := map[string]string{
+			"name": longName,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		req := httptest.NewRequest(http.MethodPatch, "/projects/"+projectID, bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("validation: invalid status returns 400", func(t *testing.T) {
+		projectID := uuid.New().String()
+
+		mockUC := &mockUsecase{
+			updateProjectFunc: func(ctx context.Context, id string, input *project.UpdateProjectInput) (*project.Project, error) {
+				return nil, &project.ValidationError{
+					Field:   "status",
+					Message: "status must be either active or archived",
+				}
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.PATCH("/projects/:id", handler.UpdateProject)
+
+		body := map[string]string{
+			"status": "invalid",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		req := httptest.NewRequest(http.MethodPatch, "/projects/"+projectID, bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("business: duplicate name returns 409 Conflict", func(t *testing.T) {
+		projectID := uuid.New().String()
+
+		mockUC := &mockUsecase{
+			updateProjectFunc: func(ctx context.Context, id string, input *project.UpdateProjectInput) (*project.Project, error) {
+				return nil, project.ErrProjectNameExists
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.PATCH("/projects/:id", handler.UpdateProject)
+
+		body := map[string]string{
+			"name": "Existing Name",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		req := httptest.NewRequest(http.MethodPatch, "/projects/"+projectID, bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusConflict, w.Code)
+	})
+
+	t.Run("business: project not found returns 404", func(t *testing.T) {
+		projectID := uuid.New().String()
+
+		mockUC := &mockUsecase{
+			updateProjectFunc: func(ctx context.Context, id string, input *project.UpdateProjectInput) (*project.Project, error) {
+				return nil, project.ErrProjectNotFound
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.PATCH("/projects/:id", handler.UpdateProject)
+
+		body := map[string]string{
+			"name": "New Name",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		req := httptest.NewRequest(http.MethodPatch, "/projects/"+projectID, bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+	t.Run("infrastructure: internal error returns 500", func(t *testing.T) {
+		projectID := uuid.New().String()
+
+		mockUC := &mockUsecase{
+			updateProjectFunc: func(ctx context.Context, id string, input *project.UpdateProjectInput) (*project.Project, error) {
+				return nil, errors.New("database error")
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.PATCH("/projects/:id", handler.UpdateProject)
+
+		body := map[string]string{
+			"name": "Updated Name",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		req := httptest.NewRequest(http.MethodPatch, "/projects/"+projectID, bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}

@@ -162,6 +162,23 @@ func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 
 	p, err := h.usecase.UpdateProject(c.Request.Context(), id, &req)
 	if err != nil {
+		var validationErr *project.ValidationError
+		if errors.As(err, &validationErr) {
+			c.JSON(http.StatusBadRequest, ErrorResponse{
+				Error:   "validation_error",
+				Message: validationErr.Message,
+			})
+			return
+		}
+
+		if errors.Is(err, project.ErrProjectNameExists) {
+			c.JSON(http.StatusConflict, ErrorResponse{
+				Error:   "conflict",
+				Message: "project name already exists",
+			})
+			return
+		}
+
 		if errors.Is(err, project.ErrProjectNotFound) {
 			c.JSON(http.StatusNotFound, ErrorResponse{
 				Error:   "not_found",
