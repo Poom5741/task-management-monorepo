@@ -2,9 +2,14 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
+	projectHandler "github.com/poom5741/task-management-monorepo/backend/internal/handler/project"
 )
 
-func SetupRouter() *gin.Engine {
+type Handlers struct {
+	Project *projectHandler.ProjectHandler
+}
+
+func SetupRouter(projectH *projectHandler.ProjectHandler) *gin.Engine {
 	r := gin.Default()
 
 	v1 := r.Group("/api/v1")
@@ -15,12 +20,11 @@ func SetupRouter() *gin.Engine {
 
 		projects := v1.Group("/projects")
 		{
-			projects.GET("", listProjects)
-			projects.POST("", createProject)
-			projects.GET("/:id", getProject)
-			projects.PATCH("/:id", updateProject)
-			projects.DELETE("/:id", deleteProject)
-			projects.GET("/:id/statistics", getProjectStatistics)
+			projects.GET("", projectH.ListProjects)
+			projects.POST("", projectH.CreateProject)
+			projects.GET("/:id", projectH.GetProject)
+			projects.PATCH("/:id", projectH.UpdateProject)
+			projects.DELETE("/:id", projectH.DeleteProject)
 
 			projects.GET("/:projectId/tasks", listTasks)
 			projects.POST("/:projectId/tasks", createTask)
@@ -50,30 +54,6 @@ func SetupRouter() *gin.Engine {
 	}
 
 	return r
-}
-
-func listProjects(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "list projects"})
-}
-
-func createProject(c *gin.Context) {
-	c.JSON(201, gin.H{"message": "create project"})
-}
-
-func getProject(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "get project"})
-}
-
-func updateProject(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "update project"})
-}
-
-func deleteProject(c *gin.Context) {
-	c.JSON(204, nil)
-}
-
-func getProjectStatistics(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "get project statistics"})
 }
 
 func listTasks(c *gin.Context) {

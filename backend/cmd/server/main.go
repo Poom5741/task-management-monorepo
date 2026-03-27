@@ -1,8 +1,18 @@
 package main
 
 import (
+	"context"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"github.com/poom5741/task-management-monorepo/backend/internal/handler"
+	projectHandler "github.com/poom5741/task-management-monorepo/backend/internal/handler/project"
+	"github.com/poom5741/task-management-monorepo/backend/internal/storage/postgres"
+	projectUsecase "github.com/poom5741/task-management-monorepo/backend/internal/usecase/project"
 	"github.com/poom5741/task-management-monorepo/backend/pkg/config"
 	"github.com/poom5741/task-management-monorepo/backend/pkg/logger"
 )
@@ -17,4 +27,46 @@ func main() {
 
 	logger.Info("Starting Task Management API server...")
 	logger.Info("Server will run on port: " + cfg.ServerPort)
+
+	db, err := postgres.New(cfg.DatabaseURL)
+	if err != nil {
+		logger.Error("Failed to connect to database: " + err.Error())
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	logger.Info("Connected to database successfully")
+
+	projectRepo := postgres.NewProjectRepository(db)
+	projectUC := projectUsecase.NewProjectUsecase(projectRepo)
+	projectH := projectHandler.NewProjectHandler(projectUC)
+
+	router := handler.SetupRouter(projectH)
+
+	srv := &http.Server{
+		Addr:    ":" + cfg.ServerPort,
+		Handler: router,
+	}
+
+	go func() {
+		logger.Info("Server listening on port " + cfg.ServerPort)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	logger.Info("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		logger.Error("Server forced to shutdown: " + err.Error())
+	}
+
+	logger.Info("Server exited")
 }
