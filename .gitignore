@@ -15,6 +15,7 @@ bin/
 *.dll
 *.so
 *.dylib
+*.tsbuildinfo
 
 # Testing
 coverage/

@@ -2,7 +2,7 @@
 
 ## Epic 1: Project Management
 
-### TM-001: Create Project
+### TM-001: Create Project Done
 **As a** user  
 **I want to** create a new project  
 **So that** I can organize related tasks together  
@@ -22,7 +22,7 @@
 
 ---
 
-### TM-002: List Projects
+### TM-002: List Projects Done 
 **As a** user  
 **I want to** view all my projects  
 **So that** I can see and select projects to work on  
