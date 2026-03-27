@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { Button } from '../../components/ui/Button'
 import { Card, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
@@ -114,46 +115,48 @@ function ProjectsPage() {
           <>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {data.data.map((project) => (
-                <Card key={project.id} hover className="group">
-                  <CardHeader>
-                    <div className="flex-1">
-                      <CardTitle className="text-xl">{project.name}</CardTitle>
-                      {project.description && (
-                        <CardDescription className="mt-1 line-clamp-2">
-                          {project.description}
-                        </CardDescription>
-                      )}
-                    </div>
-                    <Badge 
-                      variant={project.status === 'active' ? 'success' : 'neutral'}
-                      size="sm"
-                    >
-                      {project.status}
-                    </Badge>
-                  </CardHeader>
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <div className="flex items-center">
-                        <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        {project.task_count} tasks
+                <Link key={project.id} href={`/projects/${project.id}`}>
+                  <Card hover className="group cursor-pointer">
+                    <CardHeader>
+                      <div className="flex-1">
+                        <CardTitle className="text-xl">{project.name}</CardTitle>
+                        {project.description && (
+                          <CardDescription className="mt-1 line-clamp-2">
+                            {project.description}
+                          </CardDescription>
+                        )}
                       </div>
-                      <div className="flex items-center">
-                        <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        {new Date(project.created_at).toLocaleDateString()}
+                      <Badge 
+                        variant={project.status === 'active' ? 'success' : 'neutral'}
+                        size="sm"
+                      >
+                        {project.status}
+                      </Badge>
+                    </CardHeader>
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <div className="flex items-center">
+                          <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                          {project.task_count} tasks
+                        </div>
+                        <div className="flex items-center">
+                          <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {new Date(project.created_at).toLocaleDateString()}
+                        </div>
                       </div>
+                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        View
+                        <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      View
-                      <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Button>
-                  </div>
-                </Card>
+                  </Card>
+                </Link>
               ))}
             </div>
 
