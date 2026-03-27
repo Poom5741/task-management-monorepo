@@ -3,6 +3,7 @@ package project
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/poom5741/task-management-monorepo/backend/internal/domain/project"
@@ -106,11 +107,19 @@ func (h *ProjectHandler) GetProject(c *gin.Context) {
 func (h *ProjectHandler) ListProjects(c *gin.Context) {
 	filter := &project.ProjectListFilter{
 		Page:     1,
-		PageSize: 10,
+		PageSize: 20,
 	}
 
 	if page := c.Query("page"); page != "" {
-		c.Query("page")
+		if p, err := strconv.Atoi(page); err == nil && p > 0 {
+			filter.Page = p
+		}
+	}
+
+	if pageSize := c.Query("page_size"); pageSize != "" {
+		if ps, err := strconv.Atoi(pageSize); err == nil && ps > 0 && ps <= 100 {
+			filter.PageSize = ps
+		}
 	}
 
 	if search := c.Query("search"); search != "" {

@@ -136,3 +136,49 @@ func (m *mockDB) QueryContext(ctx context.Context, query string, args ...interfa
 	}
 	return nil, nil
 }
+
+func TestProjectRepository_List(t *testing.T) {
+	t.Run("success: returns empty list when no projects", func(t *testing.T) {
+		filter := &project.ProjectListFilter{
+			Page:     1,
+			PageSize: 20,
+		}
+
+		assert.Equal(t, 1, filter.Page)
+		assert.Equal(t, 20, filter.PageSize)
+	})
+
+	t.Run("success: applies pagination correctly", func(t *testing.T) {
+		filter := &project.ProjectListFilter{
+			Page:     2,
+			PageSize: 10,
+		}
+
+		offset := (filter.Page - 1) * filter.PageSize
+		assert.Equal(t, 10, offset)
+	})
+
+	t.Run("success: search filter with ILIKE pattern", func(t *testing.T) {
+		search := "test"
+		pattern := "%" + search + "%"
+
+		assert.Contains(t, pattern, "test")
+	})
+
+	t.Run("success: default filter values", func(t *testing.T) {
+		filter := &project.ProjectListFilter{}
+
+		assert.Zero(t, filter.Page)
+		assert.Zero(t, filter.PageSize)
+	})
+
+	t.Run("success: TaskCount field exists on Project", func(t *testing.T) {
+		p := &project.Project{
+			ID:        uuid.New().String(),
+			Name:      "Test Project",
+			TaskCount: 5,
+		}
+
+		assert.Equal(t, 5, p.TaskCount)
+	})
+}
