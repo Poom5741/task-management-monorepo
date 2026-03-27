@@ -40,7 +40,7 @@
 
 ---
 
-### TM-003: Get Project Details
+### TM-003: Get Project Details Done
 **As a** user  
 **I want to** view a specific project  
 **So that** I can see all its details  
@@ -58,7 +58,7 @@
 
 ---
 
-### TM-004: Update Project
+### TM-004: Update Project Done
 **As a** user  
 **I want to** update a project  
 **So that** I can modify project information  
