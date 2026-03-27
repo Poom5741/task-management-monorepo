@@ -1,0 +1,17 @@
+{
+  "name": "task-management-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "frontend": "bun run --cwd frontend",
+    "backend": "cd backend && make run",
+    "dev": "concurrently \"bun run backend\" \"bun run frontend dev\"",
+    "install:all": "bun install && cd backend && go mod download"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
