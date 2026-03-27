@@ -48,6 +48,7 @@ yarn-error.log*
 *.test
 *.out
 vendor/
+backend/server
 
 # Database
 *.db
