@@ -87,6 +87,44 @@ func (uc *ProjectUsecase) ListProjects(ctx context.Context, filter *project.Proj
 }
 
 func (uc *ProjectUsecase) UpdateProject(ctx context.Context, id string, input *project.UpdateProjectInput) (*project.Project, error) {
+	if id == "" {
+		return nil, &project.ValidationError{
+			Field:   "id",
+			Message: "id is required",
+		}
+	}
+
+	if input == nil {
+		return nil, errors.New("input is required")
+	}
+
+	if input.Name != nil {
+		if len(*input.Name) > 100 {
+			return nil, &project.ValidationError{
+				Field:   "name",
+				Message: "name must be at most 100 characters",
+			}
+		}
+	}
+
+	if input.Description != nil {
+		if len(*input.Description) > 500 {
+			return nil, &project.ValidationError{
+				Field:   "description",
+				Message: "description must be at most 500 characters",
+			}
+		}
+	}
+
+	if input.Status != nil {
+		if *input.Status != project.StatusActive && *input.Status != project.StatusArchived {
+			return nil, &project.ValidationError{
+				Field:   "status",
+				Message: "status must be either active or archived",
+			}
+		}
+	}
+
 	return uc.repo.Update(ctx, id, input)
 }
 
