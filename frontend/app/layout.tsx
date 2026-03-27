@@ -1,13 +1,11 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
-
-const inter = Inter({ subsets: ['latin'] })
+import { Navbar } from '../components/layout/Navbar'
 
 export const metadata: Metadata = {
-  title: 'Task Management System',
-  description: 'A modern task management application',
+  title: 'TaskFlow - Modern Task Management',
+  description: 'A powerful, intuitive task management system designed for modern teams',
 }
 
 export default function RootLayout({
@@ -17,8 +15,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <Providers>{children}</Providers>
+      <body className="font-sans bg-primary-50">
+        <Providers>
+          <Navbar />
+          {children}
+        </Providers>
       </body>
     </html>
   )
