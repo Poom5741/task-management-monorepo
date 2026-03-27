@@ -15,7 +15,8 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-	godotenv.Load()
+	// Try loading .env from multiple locations
+	godotenv.Load(".env", "../.env", "../../.env")
 
 	return &Config{
 		ServerPort:  getEnv("SERVER_PORT", "8080"),
