@@ -7,6 +7,7 @@ import (
 type Repository interface {
 	Create(ctx context.Context, p *Project) error
 	GetByID(ctx context.Context, id string) (*Project, error)
+	GetByName(ctx context.Context, name string) (*Project, error)
 	List(ctx context.Context, filter *ProjectListFilter) ([]*Project, int, error)
 	Update(ctx context.Context, id string, input *UpdateProjectInput) (*Project, error)
 	Delete(ctx context.Context, id string) error
