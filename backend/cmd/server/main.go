@@ -11,8 +11,10 @@ import (
 
 	"github.com/poom5741/task-management-monorepo/backend/internal/handler"
 	projectHandler "github.com/poom5741/task-management-monorepo/backend/internal/handler/project"
+	taskHandler "github.com/poom5741/task-management-monorepo/backend/internal/handler/task"
 	"github.com/poom5741/task-management-monorepo/backend/internal/storage/postgres"
 	projectUsecase "github.com/poom5741/task-management-monorepo/backend/internal/usecase/project"
+	taskUsecase "github.com/poom5741/task-management-monorepo/backend/internal/usecase/task"
 	"github.com/poom5741/task-management-monorepo/backend/pkg/config"
 	"github.com/poom5741/task-management-monorepo/backend/pkg/logger"
 )
@@ -41,7 +43,11 @@ func main() {
 	projectUC := projectUsecase.NewProjectUsecase(projectRepo)
 	projectH := projectHandler.NewProjectHandler(projectUC)
 
-	router := handler.SetupRouter(projectH)
+	taskRepo := postgres.NewTaskRepository(db)
+	taskUC := taskUsecase.NewTaskUsecase(taskRepo)
+	taskH := taskHandler.NewTaskHandler(taskUC)
+
+	router := handler.SetupRouter(projectH, taskH)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.ServerPort,

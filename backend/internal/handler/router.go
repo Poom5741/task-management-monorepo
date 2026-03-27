@@ -5,13 +5,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	projectHandler "github.com/poom5741/task-management-monorepo/backend/internal/handler/project"
+	taskHandler "github.com/poom5741/task-management-monorepo/backend/internal/handler/task"
 )
 
 type Handlers struct {
 	Project *projectHandler.ProjectHandler
+	Task    *taskHandler.TaskHandler
 }
 
-func SetupRouter(projectH *projectHandler.ProjectHandler) *gin.Engine {
+func SetupRouter(projectH *projectHandler.ProjectHandler, taskH *taskHandler.TaskHandler) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(corsMiddleware())
@@ -30,19 +32,19 @@ func SetupRouter(projectH *projectHandler.ProjectHandler) *gin.Engine {
 			projects.PATCH("/:id", projectH.UpdateProject)
 			projects.DELETE("/:id", projectH.DeleteProject)
 
-			projects.GET("/:id/tasks", listTasks)
-			projects.POST("/:id/tasks", createTask)
+			projects.GET("/:id/tasks", taskH.ListTasks)
+			projects.POST("/:id/tasks", taskH.CreateTask)
 		}
 
 		tasks := v1.Group("/tasks")
 		{
-			tasks.GET("/search", searchTasks)
-			tasks.GET("/:id", getTask)
-			tasks.PATCH("/:id", updateTask)
-			tasks.DELETE("/:id", deleteTask)
+			tasks.GET("/search", taskH.SearchTasks)
+			tasks.GET("/:id", taskH.GetTask)
+			tasks.PATCH("/:id", taskH.UpdateTask)
+			tasks.DELETE("/:id", taskH.DeleteTask)
 
-			tasks.POST("/:id/dependencies", addDependency)
-			tasks.DELETE("/:id/dependencies/:dependencyId", removeDependency)
+			tasks.POST("/:id/dependencies", taskH.AddDependency)
+			tasks.DELETE("/:id/dependencies/:dependencyId", taskH.RemoveDependency)
 		}
 
 		labels := v1.Group("/labels")
@@ -58,38 +60,6 @@ func SetupRouter(projectH *projectHandler.ProjectHandler) *gin.Engine {
 	}
 
 	return r
-}
-
-func listTasks(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "list tasks"})
-}
-
-func createTask(c *gin.Context) {
-	c.JSON(201, gin.H{"message": "create task"})
-}
-
-func getTask(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "get task"})
-}
-
-func updateTask(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "update task"})
-}
-
-func deleteTask(c *gin.Context) {
-	c.JSON(204, nil)
-}
-
-func searchTasks(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "search tasks"})
-}
-
-func addDependency(c *gin.Context) {
-	c.JSON(201, gin.H{"message": "add dependency"})
-}
-
-func removeDependency(c *gin.Context) {
-	c.JSON(204, nil)
 }
 
 func listLabels(c *gin.Context) {

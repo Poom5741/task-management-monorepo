@@ -11,6 +11,7 @@ type Repository interface {
 	Update(ctx context.Context, id string, input *UpdateTaskInput) (*Task, error)
 	Delete(ctx context.Context, id string) error
 	Search(ctx context.Context, query string, page, pageSize int) ([]*Task, int, error)
+	ProjectExists(ctx context.Context, id string) (bool, error)
 }
 
 type Usecase interface {
