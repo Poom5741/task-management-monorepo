@@ -276,5 +276,28 @@ func (r *ProjectRepository) Update(ctx context.Context, id string, input *projec
 }
 
 func (r *ProjectRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	taskQuery := `UPDATE tasks SET deleted_at = NOW() WHERE project_id = $1 AND deleted_at IS NULL`
+	_, _ = r.db.ExecContext(ctx, taskQuery, id)
+
+	query := `UPDATE projects SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL`
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return project.ErrProjectNotFound
+	}
+
 	return nil
 }

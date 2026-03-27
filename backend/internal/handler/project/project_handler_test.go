@@ -724,3 +724,82 @@ func TestProjectHandler_UpdateProject(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 	})
 }
+
+func TestProjectHandler_DeleteProject(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("success: DELETE /api/v1/projects/:id returns 204", func(t *testing.T) {
+		projectID := uuid.New().String()
+		mockUC := &mockUsecase{
+			deleteProjectFunc: func(ctx context.Context, id string) error {
+				assert.Equal(t, projectID, id)
+				return nil
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.DELETE("/projects/:id", handler.DeleteProject)
+
+		req := httptest.NewRequest(http.MethodDelete, "/projects/"+projectID, nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
+	})
+
+	t.Run("validation: empty id param returns 400", func(t *testing.T) {
+		mockUC := &mockUsecase{}
+		handler := NewProjectHandler(mockUC)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = gin.Params{{Key: "id", Value: ""}}
+		c.Request = httptest.NewRequest(http.MethodDelete, "/projects/", nil)
+
+		handler.DeleteProject(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("business: not found returns 404", func(t *testing.T) {
+		projectID := uuid.New().String()
+		mockUC := &mockUsecase{
+			deleteProjectFunc: func(ctx context.Context, id string) error {
+				return project.ErrProjectNotFound
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.DELETE("/projects/:id", handler.DeleteProject)
+
+		req := httptest.NewRequest(http.MethodDelete, "/projects/"+projectID, nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+	t.Run("infrastructure: internal error returns 500", func(t *testing.T) {
+		projectID := uuid.New().String()
+		mockUC := &mockUsecase{
+			deleteProjectFunc: func(ctx context.Context, id string) error {
+				return errors.New("database error")
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.DELETE("/projects/:id", handler.DeleteProject)
+
+		req := httptest.NewRequest(http.MethodDelete, "/projects/"+projectID, nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}

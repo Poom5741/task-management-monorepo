@@ -129,6 +129,12 @@ func (uc *ProjectUsecase) UpdateProject(ctx context.Context, id string, input *p
 }
 
 func (uc *ProjectUsecase) DeleteProject(ctx context.Context, id string) error {
+	if id == "" {
+		return &project.ValidationError{
+			Field:   "id",
+			Message: "id is required",
+		}
+	}
 	return uc.repo.Delete(ctx, id)
 }
 
