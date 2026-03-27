@@ -26,8 +26,8 @@ func SetupRouter(projectH *projectHandler.ProjectHandler) *gin.Engine {
 			projects.PATCH("/:id", projectH.UpdateProject)
 			projects.DELETE("/:id", projectH.DeleteProject)
 
-			projects.GET("/:projectId/tasks", listTasks)
-			projects.POST("/:projectId/tasks", createTask)
+			projects.GET("/:id/tasks", listTasks)
+			projects.POST("/:id/tasks", createTask)
 		}
 
 		tasks := v1.Group("/tasks")
@@ -37,8 +37,8 @@ func SetupRouter(projectH *projectHandler.ProjectHandler) *gin.Engine {
 			tasks.PATCH("/:id", updateTask)
 			tasks.DELETE("/:id", deleteTask)
 
-			tasks.POST("/:taskId/dependencies", addDependency)
-			tasks.DELETE("/:taskId/dependencies/:dependencyId", removeDependency)
+			tasks.POST("/:id/dependencies", addDependency)
+			tasks.DELETE("/:id/dependencies/:dependencyId", removeDependency)
 		}
 
 		labels := v1.Group("/labels")
