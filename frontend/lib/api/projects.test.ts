@@ -89,6 +89,30 @@ describe('projectApi', () => {
       expect(result.current.data).toEqual(mockProject)
     })
 
+    it('should fetch project with task statistics', async () => {
+      const mockProject = {
+        id: '1',
+        name: 'Test Project',
+        description: 'Test Description',
+        status: 'active' as const,
+        task_count: 10,
+        completion_percentage: 60.0,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      }
+      
+      vi.mocked(apiClient.get).mockResolvedValueOnce(mockProject)
+
+      const { result } = renderHook(() => useProject('1'), {
+        wrapper: createWrapper(),
+      })
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
+      
+      expect(result.current.data?.task_count).toBe(10)
+      expect(result.current.data?.completion_percentage).toBe(60.0)
+    })
+
     it('should not fetch when id is empty', () => {
       const { result } = renderHook(() => useProject(''), {
         wrapper: createWrapper(),
