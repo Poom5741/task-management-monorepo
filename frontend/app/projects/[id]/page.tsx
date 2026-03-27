@@ -7,14 +7,21 @@ import { Card } from '../../../components/ui/Card'
 import { Badge } from '../../../components/ui/Badge'
 import { Skeleton } from '../../../components/ui/Skeleton'
 import { EmptyState } from '../../../components/ui/EmptyState'
+import { EditProjectModal } from '../../../components/projects/EditProjectModal'
 import { useProject } from '../../../lib/api/projects'
 
 function ProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
   const projectId = params.id as string
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
 
-  const { data: project, isLoading, error } = useProject(projectId)
+  const { data: project, isLoading, error, refetch } = useProject(projectId)
+
+  React.useEffect(() => {
+    if (!isLoading && !error && project) {
+    }
+  }, [isLoading, error, project])
 
   if (isLoading) {
     return (
@@ -92,13 +99,32 @@ function ProjectDetailPage() {
                 )}
               </p>
             </div>
-            <Badge 
-              variant={project.status === 'active' ? 'success' : 'neutral'}
-              size="md"
-            >
-              {project.status}
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => setIsEditModalOpen(true)}
+                leftIcon={
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                }
+              >
+                Edit
+              </Button>
+              <Badge 
+                variant={project.status === 'active' ? 'success' : 'neutral'}
+                size="md"
+              >
+                {project.status}
+              </Badge>
+            </div>
           </div>
+
+          <EditProjectModal
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            project={project}
+          />
 
           {project.description && (
             <Card className="p-6">
