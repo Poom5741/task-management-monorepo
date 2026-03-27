@@ -12,13 +12,14 @@ const (
 )
 
 type Project struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Status      Status    `json:"status"`
-	TaskCount   int       `json:"task_count"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID                   string    `json:"id"`
+	Name                 string    `json:"name"`
+	Description          string    `json:"description"`
+	Status               Status    `json:"status"`
+	TaskCount            int       `json:"task_count"`
+	CompletionPercentage float64   `json:"completion_percentage"`
+	CreatedAt            time.Time `json:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at"`
 }
 
 type CreateProjectInput struct {

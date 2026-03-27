@@ -143,6 +143,78 @@ func TestProjectUsecase_CreateProject(t *testing.T) {
 	})
 }
 
+func TestProjectUsecase_GetProject(t *testing.T) {
+	t.Run("success: returns project with task_count and completion_percentage", func(t *testing.T) {
+		projectID := uuid.New().String()
+		mockRepo := &mockRepository{
+			getByIDFunc: func(ctx context.Context, id string) (*project.Project, error) {
+				assert.Equal(t, projectID, id)
+				return &project.Project{
+					ID:                   projectID,
+					Name:                 "Test Project",
+					Description:          "Test Description",
+					Status:               project.StatusActive,
+					TaskCount:            10,
+					CompletionPercentage: 60.0,
+					CreatedAt:            time.Now(),
+					UpdatedAt:            time.Now(),
+				}, nil
+			},
+		}
+
+		uc := NewProjectUsecase(mockRepo)
+		result, err := uc.GetProject(context.Background(), projectID)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, 10, result.TaskCount)
+		assert.Equal(t, 60.0, result.CompletionPercentage)
+	})
+
+	t.Run("validation: empty id returns validation error", func(t *testing.T) {
+		mockRepo := &mockRepository{}
+		uc := NewProjectUsecase(mockRepo)
+
+		result, err := uc.GetProject(context.Background(), "")
+
+		assert.Nil(t, result)
+		assert.Error(t, err)
+		var validationErr *project.ValidationError
+		assert.True(t, errors.As(err, &validationErr))
+		assert.Equal(t, "id", validationErr.Field)
+	})
+
+	t.Run("business: not found returns ErrProjectNotFound", func(t *testing.T) {
+		projectID := uuid.New().String()
+		mockRepo := &mockRepository{
+			getByIDFunc: func(ctx context.Context, id string) (*project.Project, error) {
+				return nil, project.ErrProjectNotFound
+			},
+		}
+
+		uc := NewProjectUsecase(mockRepo)
+		result, err := uc.GetProject(context.Background(), projectID)
+
+		assert.Nil(t, result)
+		assert.ErrorIs(t, err, project.ErrProjectNotFound)
+	})
+
+	t.Run("infrastructure: repository error", func(t *testing.T) {
+		projectID := uuid.New().String()
+		mockRepo := &mockRepository{
+			getByIDFunc: func(ctx context.Context, id string) (*project.Project, error) {
+				return nil, errors.New("database error")
+			},
+		}
+
+		uc := NewProjectUsecase(mockRepo)
+		result, err := uc.GetProject(context.Background(), projectID)
+
+		assert.Nil(t, result)
+		assert.Error(t, err)
+	})
+}
+
 func TestNewProjectUsecase(t *testing.T) {
 	t.Run("success: creates usecase with valid repository", func(t *testing.T) {
 		mockRepo := &mockRepository{}

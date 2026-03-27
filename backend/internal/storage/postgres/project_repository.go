@@ -64,9 +64,24 @@ func (r *ProjectRepository) Create(ctx context.Context, p *project.Project) erro
 
 func (r *ProjectRepository) GetByID(ctx context.Context, id string) (*project.Project, error) {
 	query := `
-		SELECT id, name, description, status, created_at, updated_at, deleted_at
-		FROM projects
-		WHERE id = $1 AND deleted_at IS NULL
+		SELECT 
+			p.id, p.name, p.description, p.status, p.created_at, p.updated_at, p.deleted_at,
+			COALESCE(t.task_count, 0) as task_count,
+			CASE 
+				WHEN COALESCE(t.task_count, 0) = 0 THEN 0
+				ELSE ROUND((COALESCE(t.done_count, 0)::decimal / t.task_count::decimal) * 100, 2)
+			END as completion_percentage
+		FROM projects p
+		LEFT JOIN (
+			SELECT 
+				project_id,
+				COUNT(*) as task_count,
+				COUNT(*) FILTER (WHERE status = 'done') as done_count
+			FROM tasks
+			WHERE deleted_at IS NULL
+			GROUP BY project_id
+		) t ON p.id = t.project_id
+		WHERE p.id = $1 AND p.deleted_at IS NULL
 	`
 
 	var p project.Project
@@ -81,6 +96,8 @@ func (r *ProjectRepository) GetByID(ctx context.Context, id string) (*project.Pr
 		&p.CreatedAt,
 		&p.UpdatedAt,
 		&deletedAt,
+		&p.TaskCount,
+		&p.CompletionPercentage,
 	)
 
 	if err != nil {

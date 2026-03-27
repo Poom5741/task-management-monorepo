@@ -229,6 +229,99 @@ func TestNewProjectHandler(t *testing.T) {
 	})
 }
 
+func TestProjectHandler_GetProject(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("success: GET /api/v1/projects/:id returns 200 with task statistics", func(t *testing.T) {
+		projectID := uuid.New().String()
+		mockUC := &mockUsecase{
+			getProjectFunc: func(ctx context.Context, id string) (*project.Project, error) {
+				assert.Equal(t, projectID, id)
+				return &project.Project{
+					ID:                   projectID,
+					Name:                 "Test Project",
+					Description:          "Test Description",
+					Status:               project.StatusActive,
+					TaskCount:            10,
+					CompletionPercentage: 60.0,
+					CreatedAt:            time.Now(),
+					UpdatedAt:            time.Now(),
+				}, nil
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.GET("/projects/:id", handler.GetProject)
+
+		req := httptest.NewRequest(http.MethodGet, "/projects/"+projectID, nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &response)
+		assert.Equal(t, float64(10), response["task_count"])
+		assert.Equal(t, float64(60), response["completion_percentage"])
+	})
+
+	t.Run("validation: empty id param returns 400", func(t *testing.T) {
+		mockUC := &mockUsecase{}
+		handler := NewProjectHandler(mockUC)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = gin.Params{{Key: "id", Value: ""}}
+		c.Request = httptest.NewRequest(http.MethodGet, "/projects/", nil)
+
+		handler.GetProject(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("business: not found returns 404", func(t *testing.T) {
+		projectID := uuid.New().String()
+		mockUC := &mockUsecase{
+			getProjectFunc: func(ctx context.Context, id string) (*project.Project, error) {
+				return nil, project.ErrProjectNotFound
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.GET("/projects/:id", handler.GetProject)
+
+		req := httptest.NewRequest(http.MethodGet, "/projects/"+projectID, nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+	t.Run("infrastructure: internal error returns 500", func(t *testing.T) {
+		projectID := uuid.New().String()
+		mockUC := &mockUsecase{
+			getProjectFunc: func(ctx context.Context, id string) (*project.Project, error) {
+				return nil, errors.New("database error")
+			},
+		}
+
+		handler := NewProjectHandler(mockUC)
+		router := gin.New()
+		router.GET("/projects/:id", handler.GetProject)
+
+		req := httptest.NewRequest(http.MethodGet, "/projects/"+projectID, nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
+
 func TestProjectHandler_ListProjects(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

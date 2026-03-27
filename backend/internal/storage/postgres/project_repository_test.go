@@ -65,16 +65,42 @@ func TestProjectRepository_GetByName(t *testing.T) {
 }
 
 func TestProjectRepository_GetByID(t *testing.T) {
-	t.Run("success: returns project when found", func(t *testing.T) {
+	t.Run("success: returns project with task_count", func(t *testing.T) {
 		p := &project.Project{
 			ID:          uuid.New().String(),
 			Name:        "Test Project",
 			Description: "Test Description",
 			Status:      project.StatusActive,
+			TaskCount:   5,
 		}
 
 		assert.NotNil(t, p)
 		assert.NotEmpty(t, p.ID)
+		assert.Equal(t, 5, p.TaskCount)
+	})
+
+	t.Run("success: returns project with completion_percentage", func(t *testing.T) {
+		p := &project.Project{
+			ID:                   uuid.New().String(),
+			Name:                 "Test Project",
+			TaskCount:            10,
+			CompletionPercentage: 60.0,
+		}
+
+		assert.Equal(t, 10, p.TaskCount)
+		assert.Equal(t, 60.0, p.CompletionPercentage)
+	})
+
+	t.Run("success: completion_percentage is zero when no tasks", func(t *testing.T) {
+		p := &project.Project{
+			ID:                   uuid.New().String(),
+			Name:                 "Empty Project",
+			TaskCount:            0,
+			CompletionPercentage: 0.0,
+		}
+
+		assert.Equal(t, 0, p.TaskCount)
+		assert.Equal(t, 0.0, p.CompletionPercentage)
 	})
 
 	t.Run("error: returns ErrProjectNotFound when not found", func(t *testing.T) {
