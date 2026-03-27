@@ -125,4 +125,52 @@ describe('projectApi', () => {
       expect(result.current.data).toEqual(mockProject)
     })
   })
+
+  describe('useProjects with filter', () => {
+    it('should fetch projects with pagination filter', async () => {
+      const mockData = {
+        data: [
+          {
+            id: '1',
+            name: 'Test Project',
+            description: 'Test Description',
+            status: 'active' as const,
+            task_count: 0,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+        ],
+        total: 1,
+      }
+      
+      vi.mocked(apiClient.get).mockResolvedValueOnce(mockData)
+
+      const { result } = renderHook(() => useProjects({ page: 2, page_size: 20 }), {
+        wrapper: createWrapper(),
+      })
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
+      
+      expect(result.current.data).toEqual(mockData)
+      expect(apiClient.get).toHaveBeenCalledWith('/projects?page=2&page_size=20')
+    })
+
+    it('should fetch projects with search filter', async () => {
+      const mockData = {
+        data: [],
+        total: 0,
+      }
+      
+      vi.mocked(apiClient.get).mockResolvedValueOnce(mockData)
+
+      const { result } = renderHook(() => useProjects({ search: 'test' }), {
+        wrapper: createWrapper(),
+      })
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
+      
+      expect(result.current.data).toEqual(mockData)
+      expect(apiClient.get).toHaveBeenCalledWith('/projects?search=test')
+    })
+  })
 })

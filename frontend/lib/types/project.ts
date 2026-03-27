@@ -3,6 +3,7 @@ export interface Project {
   name: string
   description: string
   status: 'active' | 'archived'
+  task_count: number
   created_at: string
   updated_at: string
 }
